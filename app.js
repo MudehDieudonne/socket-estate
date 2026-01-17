@@ -1,9 +1,20 @@
 import { Server } from "socket.io";
+import { createServer } from "http";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const io = new Server({
+const httpServer = createServer((req, res) => {
+  if (req.url === "/health" || req.url === "/") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("OK");
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+
+const io = new Server(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:5173",
   },
@@ -33,7 +44,9 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", ({ receiverId, data }) => {
     const receiver = getUser(receiverId);
-    io.to(receiver.socketId).emit("getMessage", data);
+    if (receiver) {
+      io.to(receiver.socketId).emit("getMessage", data);
+    }
   });
 
   socket.on("disconnect", () => {
@@ -42,5 +55,6 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 4000;
-io.listen(PORT);
-console.log(`Socket server is running on port ${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`Socket server is running on port ${PORT}`);
+});
