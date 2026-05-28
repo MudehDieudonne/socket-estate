@@ -23,8 +23,10 @@ const io = new Server(httpServer, {
 let onlineUser = [];
 
 const addUser = (userId, socketId) => {
-  const userExits = onlineUser.find((user) => user.userId === userId);
-  if (!userExits) {
+  const existingUser = onlineUser.find((user) => user.userId === userId);
+  if (existingUser) {
+    existingUser.socketId = socketId;
+  } else {
     onlineUser.push({ userId, socketId });
   }
 };
